@@ -144,7 +144,7 @@ const HomePage: React.FC = () => {
 
             {/* --- Footer --- */}
             <footer className="text-center mt-5 text-muted small">
-                <p>&copy; {new Date().getFullYear()} University Student Union. All Rights Reserved.</p>
+                <p>&copy; {new Date().getFullYear()} University of Benedicto College. All Rights Reserved.</p>
                 <p>Built for a fair and transparent democratic process.</p>
             </footer>
         </Container>

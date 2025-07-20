@@ -82,7 +82,7 @@ const CandidatesPage: React.FC = () => {
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
-      !formData.position ||
+      !formData.position  ||
       !formData.platform.trim()
     ) {
       setValidated(true); // Show validation feedback

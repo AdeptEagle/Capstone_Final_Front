@@ -184,7 +184,7 @@ interface PositionTableProps {
 
 const PositionTable: React.FC<PositionTableProps> = ({ positions, onEdit, onDelete }) => (
   <Table bordered hover responsive>
-    <thead className="table-dark">
+    <thead className="table-info">
       <tr>
         <th>#</th>
         <th>Position Title</th>

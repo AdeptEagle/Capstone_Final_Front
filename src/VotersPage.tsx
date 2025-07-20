@@ -1,244 +1,246 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  Table,
-  Badge,
-  Image, // Import Image component for displaying photos
-} from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container, Card, Table, Button, Modal, Form, Image } from 'react-bootstrap';
+import { v4 as uuidv4 } from 'uuid';
 
+// --- TYPE DEFINITION ---
 interface Voter {
   id: string;
   name: string;
   schoolId: string;
-  registeredAt: string;
-  photo?: string; // Add optional photo field (Base64 string)
+  photo?: string;
 }
 
-interface Candidate {
-  id: string;
-  firstName: string;
-  lastName: string;
-  position: string;
-}
+// --- CONSTANTS ---
+const STORAGE_KEY = 'voting-voters';
 
-interface Vote {
-  voterId: string;
-  position: string;
-  candidateId: string;
-  candidateName: string;
-  timestamp: string;
-}
-
-const STORAGE_VOTERS = 'voting-voters';
-const STORAGE_VOTES = 'voting-votes';
-const STORAGE_CANDIDATES = 'voting-candidates';
-
-const VoterManagement: React.FC = () => {
+/**
+ * VotersPage Component
+ * Manages the CRUD and search operations for voters.
+ */
+const VotersPage: React.FC = () => {
+  // --- STATE MANAGEMENT ---
   const [voters, setVoters] = useState<Voter[]>([]);
-  const [votes, setVotes] = useState<Vote[]>([]);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [name, setName] = useState('');
-  const [schoolId, setSchoolId] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null); // State to store Base64 photo
-  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState<Omit<Voter, 'id'>>({ name: '', schoolId: '', photo: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [validated, setValidated] = useState(false);
+  // New state for the search query
+  const [searchQuery, setSearchQuery] = useState('');
 
+  // --- LIFECYCLE HOOK ---
   useEffect(() => {
-    const storedVoters = JSON.parse(localStorage.getItem(STORAGE_VOTERS) || '[]');
-    const storedVotes = JSON.parse(localStorage.getItem(STORAGE_VOTES) || '[]');
-    const storedCandidates = JSON.parse(localStorage.getItem(STORAGE_CANDIDATES) || '[]');
-
-    setVoters(storedVoters);
-    setVotes(storedVotes);
-    setCandidates(storedCandidates);
+    const storedVoters = localStorage.getItem(STORAGE_KEY);
+    if (storedVoters) {
+      setVoters(JSON.parse(storedVoters));
+    }
   }, []);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // --- HELPER FUNCTIONS ---
+  const saveVoters = (updatedVoters: Voter[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedVoters));
+    setVoters(updatedVoters);
+  };
+
+  // --- EVENT HANDLERS ---
+  const handleAddClick = () => {
+    setEditingId(null);
+    setFormData({ name: '', schoolId: '', photo: '' });
+    setValidated(false);
+    setShowModal(true);
+  };
+
+  const handleEditClick = (voter: Voter) => {
+    setEditingId(voter.id);
+    setFormData({ name: voter.name, schoolId: voter.schoolId, photo: voter.photo || '' });
+    setValidated(false);
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    if (confirm('Are you sure you want to delete this voter?')) {
+      const updatedVoters = voters.filter((voter) => voter.id !== id);
+      saveVoters(updatedVoters);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+  };
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhoto(reader.result as string); // Store Base64 string
+        setFormData({ ...formData, photo: reader.result as string });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const form = event.currentTarget;
+    event.preventDefault();
+
+    if (form.checkValidity() === false) {
+      event.stopPropagation();
+      setValidated(true);
+      return;
+    }
+
+    if (editingId) {
+      const updatedVoters = voters.map((voter) =>
+        voter.id === editingId ? { ...voter, ...formData } : voter
+      );
+      saveVoters(updatedVoters);
     } else {
-      setPhoto(null);
+      const newVoter: Voter = { id: uuidv4(), ...formData };
+      saveVoters([...voters, newVoter]);
     }
+
+    handleCloseModal();
   };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !schoolId) return alert('Name and School ID are required.');
-    if (voters.some(v => v.schoolId === schoolId)) {
-      return alert('Voter with this School ID already exists.');
-    }
-
-    const newVoter: Voter = {
-      id: 'voter-' + Date.now(),
-      name,
-      schoolId,
-      registeredAt: new Date().toISOString(),
-      photo: photo || undefined, // Add photo if available
-    };
-    const updatedVoters = [...voters, newVoter];
-    setVoters(updatedVoters);
-    localStorage.setItem(STORAGE_VOTERS, JSON.stringify(updatedVoters));
-    setName('');
-    setSchoolId('');
-    setPhoto(null); // Clear photo input after registration
-    // Clear the file input visually
-    const photoInput = document.getElementById('voterPhoto') as HTMLInputElement;
-    if (photoInput) {
-      photoInput.value = '';
-    }
-  };
-
-  const handleDelete = (voterId: string) => {
-    if (window.confirm('Are you sure you want to delete this voter?')) {
-      const updatedVoters = voters.filter(v => v.id !== voterId);
-      setVoters(updatedVoters);
-      localStorage.setItem(STORAGE_VOTERS, JSON.stringify(updatedVoters));
-    }
-  };
-
-  const filteredVoters = voters.filter(v =>
-    v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.schoolId.toLowerCase().includes(searchTerm.toLowerCase())
+  
+  // --- FILTERING LOGIC ---
+  // Filters voters based on the search query. The search is case-insensitive.
+  const filteredVoters = voters.filter(voter =>
+    voter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    voter.schoolId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderVotedFor = (voterId: string) => {
-    const voterVotes = votes.filter(v => v.voterId === voterId);
-    if (voterVotes.length === 0) return 'N/A';
-    return voterVotes
-      .map(vote => {
-        const candidate = candidates.find(c => c.id === vote.candidateId);
-        return candidate
-          ? `${candidate.firstName} ${candidate.lastName} (${vote.position})`
-          : vote.position;
-      })
-      .join(', ');
-  };
-
-  const renderVoteTime = (voterId: string) => {
-    const voterVotes = votes.filter(v => v.voterId === voterId);
-    return voterVotes.length
-      ? new Date(voterVotes[voterVotes.length - 1].timestamp).toLocaleString()
-      : 'N/A';
-  };
-
+  // --- RENDER ---
   return (
-    <Container className="mt-4">
-      <h2 className="text-primary fw-bold">Voter Management</h2>
+    <>
+      <Container fluid className="p-4">
+        <Card>
+          <Card.Header as="h2" className="fw-bold">
+            Voters List
+          </Card.Header>
+          <Card.Body>
+            {/* Toolbar with Add button and Search bar */}
+            <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+              <Button variant="primary" onClick={handleAddClick}>
+                Add New Voter
+              </Button>
+              <Form.Control
+                type="search"
+                placeholder="Search by name or School ID..."
+                style={{ maxWidth: '350px' }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <Table bordered hover responsive>
+              <thead className="table-info">
+                <tr>
+                  <th>#</th>
+                  <th>Photo</th>
+                  <th>Name</th>
+                  <th>School ID</th>
+                  <th className="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredVoters.length > 0 ? (
+                  filteredVoters.map((voter, index) => (
+                    <tr key={voter.id}>
+                      <td>{index + 1}</td>
+                      <td className="text-center">
+                        <Image
+                          src={voter.photo || `https://placehold.co/60x60//?text=No+Photo`}
+                          alt={voter.name}
+                          roundedCircle
+                          style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                        />
+                      </td>
+                      <td>{voter.name}</td>
+                      <td>{voter.schoolId}</td>
+                      <td className="text-center">
+                        <Button variant="secondary" size="sm" className="me-2" onClick={() => handleEditClick(voter)}>
+                          Edit
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => handleDeleteClick(voter.id)}>
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center">
+                      {searchQuery ? "No voters found matching your search." : "No voters have been added yet."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </Card.Body>
+        </Card>
+      </Container>
 
-      <Form className="bg-white p-4 rounded shadow-sm mb-4" onSubmit={handleRegister}>
-        <h4>Register New Voter</h4>
-        <Row>
-          <Col md={4}>
+      {/* Add/Edit Voter Modal */}
+      <Modal show={showModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{editingId ? 'Edit Voter' : 'Add New Voter'}</Modal.Title>
+        </Modal.Header>
+        <Form noValidate validated={validated} onSubmit={handleSubmit}>
+          <Modal.Body>
             <Form.Group className="mb-3">
               <Form.Label>Full Name</Form.Label>
               <Form.Control
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter voter's full name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                autoFocus
               />
+              <Form.Control.Feedback type="invalid">Please provide a name.</Form.Control.Feedback>
             </Form.Group>
-          </Col>
-          <Col md={4}>
             <Form.Group className="mb-3">
               <Form.Label>School ID</Form.Label>
               <Form.Control
                 type="text"
-                value={schoolId}
-                onChange={(e) => setSchoolId(e.target.value)}
+                placeholder="Enter voter's school ID"
+                value={formData.schoolId}
+                onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
                 required
               />
+              <Form.Control.Feedback type="invalid">Please provide a school ID.</Form.Control.Feedback>
             </Form.Group>
-          </Col>
-          <Col md={4}>
-            <Form.Group className="mb-3">
-              <Form.Label>Voter Photo (Optional)</Form.Label>
+            <Form.Group>
+              <Form.Label>Photo</Form.Label>
               <Form.Control
-                id="voterPhoto" // Add an ID to easily clear the input
                 type="file"
-                accept="image/*" // Accept only image files
+                accept="image/*"
                 onChange={handlePhotoChange}
               />
+              {formData.photo && (
+                <div className="text-center mt-3">
+                  <Image
+                    src={formData.photo}
+                    alt="Preview"
+                    roundedCircle
+                    style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                  />
+                </div>
+              )}
             </Form.Group>
-          </Col>
-        </Row>
-        <Row>
-          <Col>
-            <Button variant="primary" type="submit" className="w-100">
-              Register Voter
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseModal}>
+              Cancel
             </Button>
-          </Col>
-        </Row>
-      </Form>
-
-      <Form.Group className="mb-3">
-        <Form.Control
-          type="text"
-          placeholder="Search voters by name or school ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </Form.Group>
-
-      <Table bordered hover responsive className="bg-white rounded shadow-sm">
-        <thead className="table-light">
-          <tr>
-            <th>Photo</th> {/* New column for photo */}
-            <th>Name</th>
-            <th>School ID</th>
-            <th>Status</th>
-            <th>Voted For</th>
-            <th>Time Voted</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredVoters.map(voter => {
-            const hasVoted = votes.some(v => v.voterId === voter.id);
-            return (
-              <tr key={voter.id}>
-                <td>
-                  {voter.photo ? (
-                    <Image
-                      src={voter.photo}
-                      alt={`${voter.name}'s photo`}
-                      style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }}
-                      thumbnail
-                    />
-                  ) : (
-                    'N/A'
-                  )}
-                </td>
-                <td>{voter.name}</td>
-                <td>{voter.schoolId}</td>
-                <td>
-                  <Badge bg={hasVoted ? 'success' : 'danger'}>
-                    {hasVoted ? 'Voted' : 'Not Voted'}
-                  </Badge>
-                </td>
-                <td>{renderVotedFor(voter.id)}</td>
-                <td>{renderVoteTime(voter.id)}</td>
-                <td>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(voter.id)}>
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-    </Container>
+            <Button variant="primary" type="submit">
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+    </>
   );
 };
 
-export default VoterManagement;
+export default VotersPage;

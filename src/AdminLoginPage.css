@@ -1,0 +1,64 @@
+/* AdminLoginPage.css */
+.login-page {
+  /* You can change this URL to any image you like */
+  background-image: url('https://images.unsplash.com/photo-1500534623283-312aade485b7?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  max-width: 400px;
+  width: 100%;
+  padding: 2.5rem;
+  color: white;
+
+  /* Glassmorphism Effect */
+  background: rgba(22, 34, 57, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Style for input fields and icons */
+.login-card .input-group-text {
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.login-card .form-control {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 500;
+}
+
+.login-card .form-control:focus {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.login-card .form-control::placeholder {
+  color: #ccc;
+}
+
+/* Custom button style */
+.login-button {
+  padding: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+}

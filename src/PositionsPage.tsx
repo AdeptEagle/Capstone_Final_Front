@@ -140,7 +140,7 @@ const PositionManager: React.FC = () => {
         </Card.Header>
         <Card.Body>
           <Button variant="primary" onClick={handleShowAddModal} className="mb-3 d-flex align-items-center">
-            <FiPlus className="me-2" /> Add New Position
+            <FiPlus className="me-2" /> Add Position
           </Button>
 
           <PositionTable

@@ -121,7 +121,7 @@ const VotersPage: React.FC = () => {
             {/* Toolbar with Add button and Search bar */}
             <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
               <Button variant="primary" onClick={handleAddClick}>
-                Add New Voter
+                + Add Voter
               </Button>
               <Form.Control
                 type="search"

@@ -58,7 +58,6 @@ const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin }) => {
               />
             </InputGroup>
           </Form.Group>
-
           <Button variant="primary" type="submit" className="w-100 login-button">
             Login
           </Button>

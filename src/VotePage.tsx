@@ -208,7 +208,7 @@ export default function Votes() {
       <Container className="my-5 text-center">
         <Card className="p-5 shadow-lg">
             <Card.Body>
-                <h2 className="text-success mb-3">Voting Complete!</h2>
+                <h2 className="text-success mb-3">Voting Comple0.te!</h2>
                 <p className="lead">Thank you for participating in the election.</p>
                 <div className="mt-4">
                     <Button variant="secondary" onClick={logout} className="me-2">Vote Again</Button>

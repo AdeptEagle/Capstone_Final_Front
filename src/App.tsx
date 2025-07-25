@@ -7,7 +7,12 @@ import PositionsPage from './PositionsPage';
 import ResultPage from './ResultPage';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import AdminLoginPage from './AdminLoginPage';
+import UnifiedLoginPage from './User/UnifiedLoginPage';
+import UserLayout from './User/UserLayout';
+import HomePageUser from './User/HomePageUser';
+import CandidatesPageUser from './User/CandidatesPageUser';
+import VotePage from './User/VotePage';
+import ResultPageUser from './User/ResultPageUser';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import './App.css';
@@ -102,21 +107,51 @@ const MainLayout: React.FC<{ onLogout: () => void; children: React.ReactNode }> 
   );
 };
 
-// --- Main App Component (Routing Logic - Unchanged) ---
+// --- Main App Component (Updated with Unified Login) ---
 const App: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     return localStorage.getItem('isAdminLoggedIn') === 'true';
   });
 
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(() => {
+    return localStorage.getItem('isUserLoggedIn') === 'true';
+  });
+
+  const [currentUserSchoolId, setCurrentUserSchoolId] = useState(() => {
+    return localStorage.getItem('currentUserSchoolId') || '';
+  });
+
   const handleAdminLogin = () => {
     localStorage.setItem('isAdminLoggedIn', 'true');
+    localStorage.removeItem('isUserLoggedIn');
+    localStorage.removeItem('currentUserSchoolId');
     setIsAdminLoggedIn(true);
+    setIsUserLoggedIn(false);
+    setCurrentUserSchoolId('');
+  };
+
+  const handleUserLogin = (schoolId: string) => {
+    localStorage.setItem('isUserLoggedIn', 'true');
+    localStorage.setItem('currentUserSchoolId', schoolId);
+    localStorage.removeItem('isAdminLoggedIn');
+    setIsUserLoggedIn(true);
+    setCurrentUserSchoolId(schoolId);
+    setIsAdminLoggedIn(false);
   };
 
   const handleAdminLogout = () => {
     localStorage.removeItem('isAdminLoggedIn');
     setIsAdminLoggedIn(false);
   };
+
+  const handleUserLogout = () => {
+    localStorage.removeItem('isUserLoggedIn');
+    localStorage.removeItem('currentUserSchoolId');
+    setIsUserLoggedIn(false);
+    setCurrentUserSchoolId('');
+  };
+
+  const isLoggedIn = isAdminLoggedIn || isUserLoggedIn;
 
   return (
     <Router>
@@ -125,11 +160,18 @@ const App: React.FC = () => {
         <Route
           path="/login"
           element={
-            isAdminLoggedIn ? <Navigate to="/" /> : <AdminLoginPage onLogin={handleAdminLogin} />
+            isLoggedIn ? (
+              <Navigate to={isAdminLoggedIn ? "/" : "/user"} />
+            ) : (
+              <UnifiedLoginPage
+                onAdminLogin={handleAdminLogin}
+                onUserLogin={handleUserLogin}
+              />
+            )
           }
         />
 
-        {/* Protected Application Routes */}
+        {/* Admin Protected Routes */}
         <Route
           path="/*"
           element={
@@ -144,6 +186,30 @@ const App: React.FC = () => {
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </MainLayout>
+            ) : isUserLoggedIn ? (
+              <Navigate to="/user" />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        {/* User Protected Routes */}
+        <Route
+          path="/user/*"
+          element={
+            isUserLoggedIn ? (
+              <UserLayout onLogout={handleUserLogout} currentUser={currentUserSchoolId}>
+                <Routes>
+                  <Route path="/" element={<HomePageUser />} />
+                  <Route path="/candidates" element={<CandidatesPageUser />} />
+                  <Route path="/vote" element={<VotePage />} />
+                  <Route path="/results" element={<ResultPageUser />} />
+                  <Route path="*" element={<Navigate to="/user" />} />
+                </Routes>
+              </UserLayout>
+            ) : isAdminLoggedIn ? (
+              <Navigate to="/" />
             ) : (
               <Navigate to="/login" />
             )
